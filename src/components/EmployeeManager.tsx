@@ -5,7 +5,7 @@ import { useEmployees } from '@/hooks/useEmployees'
 
 export default function EmployeeManager() {
   const {
-    employees, loading, getEmployees,
+    employees, loading, error, getEmployees,
     addEmployee, updateEmployee, deactivateEmployee,
   } = useEmployees()
   const [name, setName] = useState('')
@@ -20,12 +20,13 @@ export default function EmployeeManager() {
     e.preventDefault()
     if (!name.trim()) return
 
+    let result
     if (editingId) {
-      await updateEmployee(editingId, { name, phone: phone || undefined })
+      result = await updateEmployee(editingId, { name, phone: phone || undefined })
     } else {
-      await addEmployee(name, phone || undefined)
+      result = await addEmployee(name, phone || undefined)
     }
-    resetForm()
+    if (result) resetForm()
   }
 
   async function handleDeactivate(id: number, empName: string) {
@@ -104,6 +105,9 @@ export default function EmployeeManager() {
               )}
             </div>
           </form>
+          {error && (
+            <p className="mt-3 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+          )}
         </div>
 
         {/* 직원 목록 */}
