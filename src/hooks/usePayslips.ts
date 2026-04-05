@@ -89,6 +89,17 @@ export function usePayslips() {
     return mapped
   }, [])
 
+  const deletePayslip = useCallback(async (id: number): Promise<boolean> => {
+    setError(null)
+    const { error: err } = await supabase.from('payslips').delete().eq('id', id)
+    if (err) {
+      setError(err.message)
+      return false
+    }
+    setPayslips((prev) => prev.filter((p) => p.id !== id))
+    return true
+  }, [])
+
   return {
     payslips,
     loading,
@@ -96,5 +107,6 @@ export function usePayslips() {
     savePayslip,
     getPayslips,
     getPayslipByEmployeeMonth,
+    deletePayslip,
   }
 }

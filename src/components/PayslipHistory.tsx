@@ -10,7 +10,7 @@ import { downloadPayslipPdf } from './PayslipPDF'
 
 export default function PayslipHistory() {
   const { employees, getEmployees } = useEmployees()
-  const { payslips, loading, getPayslips } = usePayslips()
+  const { payslips, loading, getPayslips, deletePayslip } = usePayslips()
   const [filterYear, setFilterYear] = useState<number | ''>(new Date().getFullYear())
   const [filterMonth, setFilterMonth] = useState<number | ''>('')
   const [filterEmployee, setFilterEmployee] = useState<number | ''>('')
@@ -39,6 +39,11 @@ export default function PayslipHistory() {
     } catch (err) {
       alert(`PDF 생성 중 오류가 발생했습니다.\n${err}`)
     }
+  }
+
+  async function handleDelete(p: PayslipWithEmployee) {
+    if (!confirm(`${p.employee_name} ${p.year}.${String(p.month).padStart(2, '0')} 지급명세서를 삭제하시겠습니까?`)) return
+    await deletePayslip(p.id)
   }
 
   // 합계 계산
@@ -100,12 +105,20 @@ export default function PayslipHistory() {
                 <p className="font-semibold text-navy-900">{p.employee_name}</p>
                 <p className="text-xs text-slate-500">{p.year}.{String(p.month).padStart(2, '0')}</p>
               </div>
-              <button
-                onClick={() => handlePdfDownload(p)}
-                className="text-navy-500 text-xs font-medium px-3 py-2 rounded-lg hover:bg-navy-50 transition-colors min-h-[44px]"
-              >
-                PDF
-              </button>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => handlePdfDownload(p)}
+                  className="text-navy-500 text-xs font-medium px-3 py-2 rounded-lg hover:bg-navy-50 transition-colors min-h-[44px]"
+                >
+                  PDF
+                </button>
+                <button
+                  onClick={() => handleDelete(p)}
+                  className="text-red-400 text-xs font-medium px-3 py-2 rounded-lg hover:bg-red-50 transition-colors min-h-[44px]"
+                >
+                  삭제
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
               <div className="flex justify-between">
@@ -171,7 +184,7 @@ export default function PayslipHistory() {
               <th className="py-3 px-4 text-right font-semibold text-navy-700">총급여</th>
               <th className="py-3 px-4 text-right font-semibold text-navy-700">공제</th>
               <th className="py-3 px-4 text-right font-semibold text-navy-700">실수령액</th>
-              <th className="py-3 px-4 text-center font-semibold text-navy-700 w-20">PDF</th>
+              <th className="py-3 px-4 text-center font-semibold text-navy-700 w-28"></th>
             </tr>
           </thead>
           <tbody>
@@ -187,13 +200,22 @@ export default function PayslipHistory() {
                 <td className="py-2.5 px-4 text-right tabular-nums text-red-500">-{formatCurrency(p.tax_amount)}</td>
                 <td className="py-2.5 px-4 text-right tabular-nums font-semibold text-navy-700">{formatCurrency(p.net_pay)}</td>
                 <td className="py-2.5 px-4 text-center">
-                  <button
-                    onClick={() => handlePdfDownload(p)}
-                    className="text-navy-500 hover:text-navy-700 hover:bg-navy-50 text-xs font-medium px-2 py-1 rounded transition-colors"
-                    title="PDF 다운로드"
-                  >
-                    PDF
-                  </button>
+                  <div className="flex justify-center gap-1">
+                    <button
+                      onClick={() => handlePdfDownload(p)}
+                      className="text-navy-500 hover:text-navy-700 hover:bg-navy-50 text-xs font-medium px-2 py-1 rounded transition-colors"
+                      title="PDF 다운로드"
+                    >
+                      PDF
+                    </button>
+                    <button
+                      onClick={() => handleDelete(p)}
+                      className="text-red-400 hover:text-red-600 hover:bg-red-50 text-xs font-medium px-2 py-1 rounded transition-colors"
+                      title="삭제"
+                    >
+                      삭제
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
