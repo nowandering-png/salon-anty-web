@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Employee } from '@/lib/types'
 import { calculatePayslip } from '@/lib/calculator'
 import { formatCurrency, parseCurrencyInput } from '@/lib/formatter'
 import { useEmployees } from '@/hooks/useEmployees'
 import { usePayslips } from '@/hooks/usePayslips'
-import { downloadPayslipPdf } from './PayslipPDF'
+import { downloadPayslipImage, payslipImageFilename } from '@/lib/exportImage'
 import PayslipPreview from './PayslipPreview'
 
 export default function PayslipForm() {
@@ -18,6 +18,7 @@ export default function PayslipForm() {
   const [salesInput, setSalesInput] = useState('')
   const [productInput, setProductInput] = useState('')
   const [saving, setSaving] = useState(false)
+  const previewRef = useRef<HTMLDivElement>(null)
 
   const salesAmount = parseCurrencyInput(salesInput)
   const productAmount = parseCurrencyInput(productInput)
@@ -76,7 +77,7 @@ export default function PayslipForm() {
     }
   }
 
-  async function handlePdfDownload() {
+  async function handleImageDownload() {
     if (!selectedEmployeeId) {
       alert('직원을 선택해주세요.')
       return
@@ -85,18 +86,17 @@ export default function PayslipForm() {
       alert('매출액 또는 판매액을 입력해주세요.')
       return
     }
+    if (!previewRef.current) return
     const empName = selectedEmployee?.name || ''
 
     setSaving(true)
     try {
-      await downloadPayslipPdf({
-        calculation,
-        employeeName: empName,
-        year,
-        month,
-      })
+      await downloadPayslipImage(
+        previewRef.current,
+        payslipImageFilename(year, month, empName),
+      )
     } catch (err) {
-      alert(`PDF 생성 중 오류가 발생했습니다.\n${err}`)
+      alert(`이미지 생성 중 오류가 발생했습니다.\n${err}`)
     } finally {
       setSaving(false)
     }
@@ -230,16 +230,17 @@ export default function PayslipForm() {
               {saving ? '저장 중...' : 'DB 저장'}
             </button>
             <button
-              onClick={handlePdfDownload}
-              className="flex-1 bg-white text-navy-700 border-2 border-navy-700 py-3 px-4 rounded-lg hover:bg-navy-50 transition-colors text-sm font-semibold min-h-[44px]"
+              onClick={handleImageDownload}
+              disabled={saving}
+              className="flex-1 bg-white text-navy-700 border-2 border-navy-700 py-3 px-4 rounded-lg hover:bg-navy-50 disabled:opacity-50 transition-colors text-sm font-semibold min-h-[44px]"
             >
-              PDF 다운로드
+              이미지 저장
             </button>
           </div>
         </div>
 
         {/* ── 우측: 미리보기 ── */}
-        <div className="md:col-span-3">
+        <div className="md:col-span-3" ref={previewRef}>
           <PayslipPreview
             calculation={calculation}
             employeeName={selectedEmployee?.name || ''}

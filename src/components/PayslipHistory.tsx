@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { PayslipWithEmployee } from '@/lib/types'
-import { calculatePayslip } from '@/lib/calculator'
 import { formatCurrency } from '@/lib/formatter'
 import { useEmployees } from '@/hooks/useEmployees'
 import { usePayslips } from '@/hooks/usePayslips'
-import { downloadPayslipPdf } from './PayslipPDF'
+import PayslipDetailModal from './PayslipDetailModal'
 
 export default function PayslipHistory() {
   const { employees, getEmployees } = useEmployees()
@@ -14,6 +13,7 @@ export default function PayslipHistory() {
   const [filterYear, setFilterYear] = useState<number | ''>(new Date().getFullYear())
   const [filterMonth, setFilterMonth] = useState<number | ''>('')
   const [filterEmployee, setFilterEmployee] = useState<number | ''>('')
+  const [detailPayslip, setDetailPayslip] = useState<PayslipWithEmployee | null>(null)
 
   useEffect(() => {
     getEmployees()
@@ -26,20 +26,6 @@ export default function PayslipHistory() {
     if (filterEmployee) filters.employee_id = filterEmployee
     getPayslips(filters)
   }, [filterYear, filterMonth, filterEmployee, getPayslips])
-
-  async function handlePdfDownload(p: PayslipWithEmployee) {
-    try {
-      const calculation = calculatePayslip(p.sales_amount, p.product_amount)
-      await downloadPayslipPdf({
-        calculation,
-        employeeName: p.employee_name,
-        year: p.year,
-        month: p.month,
-      })
-    } catch (err) {
-      alert(`PDF 생성 중 오류가 발생했습니다.\n${err}`)
-    }
-  }
 
   async function handleDelete(p: PayslipWithEmployee) {
     if (!confirm(`${p.employee_name} ${p.year}.${String(p.month).padStart(2, '0')} 지급명세서를 삭제하시겠습니까?`)) return
@@ -107,10 +93,10 @@ export default function PayslipHistory() {
               </div>
               <div className="flex gap-1">
                 <button
-                  onClick={() => handlePdfDownload(p)}
+                  onClick={() => setDetailPayslip(p)}
                   className="text-navy-500 text-xs font-medium px-3 py-2 rounded-lg hover:bg-navy-50 transition-colors min-h-[44px]"
                 >
-                  PDF
+                  보기
                 </button>
                 <button
                   onClick={() => handleDelete(p)}
@@ -202,11 +188,11 @@ export default function PayslipHistory() {
                 <td className="py-2.5 px-4 text-center">
                   <div className="flex justify-center gap-1">
                     <button
-                      onClick={() => handlePdfDownload(p)}
+                      onClick={() => setDetailPayslip(p)}
                       className="text-navy-500 hover:text-navy-700 hover:bg-navy-50 text-xs font-medium px-2 py-1 rounded transition-colors"
-                      title="PDF 다운로드"
+                      title="상세 보기"
                     >
-                      PDF
+                      보기
                     </button>
                     <button
                       onClick={() => handleDelete(p)}
@@ -243,6 +229,14 @@ export default function PayslipHistory() {
           )}
         </table>
       </div>
+
+      {/* 상세 모달 */}
+      {detailPayslip && (
+        <PayslipDetailModal
+          payslip={detailPayslip}
+          onClose={() => setDetailPayslip(null)}
+        />
+      )}
     </div>
   )
 }
