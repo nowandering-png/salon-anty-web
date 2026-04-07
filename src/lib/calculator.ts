@@ -15,8 +15,10 @@ export function calculatePayslip(salesAmount: number, productAmount: number): Pa
   const grossPay = servicePay + productPay;
 
   // 원천징수 3.3% (소득세 3% + 지방소득세 0.3%)
-  const incomeTax = Math.round(grossPay * 0.03);
-  const localTax = Math.round(grossPay * 0.003);
+  // 세법 기준: 10원 미만 절사. 소득세를 먼저 구해 10원 미만 버리고,
+  // 지방소득세는 (소득세 × 10%) 후 다시 10원 미만 버림.
+  const incomeTax = Math.floor((grossPay * 0.03) / 10) * 10;
+  const localTax = Math.floor((incomeTax * 0.1) / 10) * 10;
   const taxAmount = incomeTax + localTax;
 
   // 실수령액
