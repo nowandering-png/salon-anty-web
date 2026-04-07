@@ -1,6 +1,7 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { PayslipWithEmployee } from '@/lib/types'
 import { calculatePayslip } from '@/lib/calculator'
 import { downloadPayslipImage, payslipImageFilename } from '@/lib/exportImage'
@@ -14,6 +15,20 @@ interface Props {
 export default function PayslipDetailModal({ payslip, onClose }: Props) {
   const previewRef = useRef<HTMLDivElement>(null)
   const [saving, setSaving] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // 모달 열린 동안 배경 스크롤 잠금
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [])
 
   const calculation = calculatePayslip(payslip.sales_amount, payslip.product_amount)
 
@@ -32,13 +47,15 @@ export default function PayslipDetailModal({ payslip, onClose }: Props) {
     }
   }
 
-  return (
+  if (!mounted) return null
+
+  const modal = (
     <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-start md:items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 bg-black/50 z-[60] flex items-start md:items-center justify-center p-4 overflow-y-auto overscroll-contain"
       onClick={onClose}
     >
       <div
-        className="bg-slate-50 rounded-2xl shadow-xl max-w-2xl w-full my-4"
+        className="bg-slate-50 rounded-2xl shadow-xl max-w-2xl w-full my-4 mb-24 md:mb-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
@@ -86,4 +103,6 @@ export default function PayslipDetailModal({ payslip, onClose }: Props) {
       </div>
     </div>
   )
+
+  return createPortal(modal, document.body)
 }
